@@ -7686,6 +7686,7 @@ dependencies = [
  "log",
  "maplit",
  "num",
+ "serde",
  "serde_json",
  "structopt",
  "tiny-keccak 1.5.0",
