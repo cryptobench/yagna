@@ -306,8 +306,8 @@ impl PaymentDriverCron for ZksyncDriver {
 	                    .into_iter()
 	                    .map(|payment| utils::db_amount_to_big_dec(payment.amount))
 	                    .sum::<BigDecimal>();
-                    }
-                };
+                        }
+                    };
 
                 let order_ids = payments
                     .iter()
