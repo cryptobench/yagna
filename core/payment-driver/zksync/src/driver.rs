@@ -8,7 +8,6 @@ use chrono::Utc;
 use maplit::hashmap;
 use std::collections::HashMap;
 use uuid::Uuid;
-use std::str::FromStr;
 
 // Workspace uses
 use ya_payment_driver::{
@@ -291,29 +290,28 @@ impl PaymentDriverCron for ZksyncDriver {
                     log::warn!("Payment failed, will be re-tried.");
                     continue;
                 }
-                let driver_name = self.get_name();
-                let details = match wallet::verify_tx(&tx_hash).await
-                {
-                    Ok(a) => a,
-                    Err(e) => {
-                        log::error!("{}", e);
-                        
-	                // Create bespoke payment details:
-	                // - Sender + receiver are the same
-	                // - Date is always now
-	                // - Amount needs to be updated to total of all PaymentEntity's
-	                let mut details = utils::db_to_payment_details(&payments.first().unwrap());
-	                details.amount = payments
-	                    .into_iter()
-	                    .map(|payment| utils::db_amount_to_big_dec(payment.amount))
-	                    .sum::<BigDecimal>();
-                    }
-                };
-
                 let order_ids = payments
                     .iter()
                     .map(|payment| payment.order_id.clone())
                     .collect();
+                let details = match wallet::verify_tx(&tx_hash).await
+                {
+                    Ok(a) => a,
+                    Err(e) => {
+                        log::warn!("Failed to get transaction details from zksync, creating bespoke details. Error={}", e);
+
+    	                // Create bespoke payment details:
+    	                // - Sender + receiver are the same
+    	                // - Date is always now
+    	                // - Amount needs to be updated to total of all PaymentEntity's
+    	                let mut details = utils::db_to_payment_details(&payments.first().unwrap());
+    	                details.amount = payments
+    	                    .into_iter()
+    	                    .map(|payment| utils::db_amount_to_big_dec(payment.amount.clone()))
+    	                    .sum::<BigDecimal>();
+                        details
+                    }
+                };
                 let tx_hash = hex::decode(&tx_hash).unwrap();
                 let platform = DEFAULT_PLATFORM; // TODO: Implement multi-network support
                 if let Err(e) =
