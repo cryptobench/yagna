@@ -13,7 +13,7 @@ use ya_payment_driver::{
         PaymentEntity, TransactionEntity, TransactionStatus, PAYMENT_STATUS_FAILED,
         PAYMENT_STATUS_NOT_YET, TX_CREATED,
     },
-    model::{GenericError, PaymentDetails, SchedulePayment},
+    model::{PaymentDetails, SchedulePayment},
     utils,
 };
 
@@ -105,31 +105,23 @@ impl ZksyncDao {
         tx_id
     }
 
-    pub async fn transaction_confirmed(&self, tx_id: &str, result: bool) -> Vec<PaymentEntity> {
-        let status = if result {
-            TransactionStatus::Confirmed
-        } else {
-            TransactionStatus::Failed
-        };
-
+    pub async fn transaction_confirmed(&self, tx_id: &str) -> Vec<PaymentEntity> {
         if let Err(e) = self
             .transaction()
-            .update_tx_status(tx_id.to_string(), status.into())
+            .update_tx_status(tx_id.to_string(), TransactionStatus::Confirmed.into())
             .await
         {
             log::error!("Failed to update tx status for {:?} : {:?}", tx_id, e)
             // TO CHECK: Should it continue or stop the process...
         }
-        if result {
-            match self.payment().get_by_tx_id(tx_id.to_string()).await {
-                Ok(payments) => return payments,
-                Err(e) => log::error!("Failed to fetch `payments` for tx {:?} : {:?}", tx_id, e),
-            };
-        }
+        match self.payment().get_by_tx_id(tx_id.to_string()).await {
+            Ok(payments) => return payments,
+            Err(e) => log::error!("Failed to fetch `payments` for tx {:?} : {:?}", tx_id, e),
+        };
         vec![]
     }
 
-    pub async fn transaction_success(&self, tx_id: &str, tx_hash: &str, order_id: &str) {
+    pub async fn transaction_sent(&self, tx_id: &str, tx_hash: &str, order_id: &str) {
         if let Err(e) = self
             .payment()
             .update_tx_id(order_id.to_string(), tx_id.to_string())
@@ -148,28 +140,7 @@ impl ZksyncDao {
         }
     }
 
-    pub async fn transaction_failed(&self, tx_id: &str, error: &GenericError, order_id: &str) {
-        if let Err(e) = self
-            .payment()
-            .update_status(
-                order_id.to_string(),
-                match error {
-                    // TODO: Handle other statusses
-                    // GNTDriverError::InsufficientFunds => PAYMENT_STATUS_NOT_ENOUGH_FUNDS,
-                    // GNTDriverError::InsufficientGas => PAYMENT_STATUS_NOT_ENOUGH_GAS,
-                    _ => PAYMENT_STATUS_FAILED,
-                },
-            )
-            .await
-        {
-            log::error!(
-                "Failed to update transaction failed in `payment` {:?} : {:?}",
-                tx_id,
-                e
-            )
-            // TO CHECK: Should it continue or stop the process...
-        }
-
+    pub async fn transaction_failed(&self, tx_id: &str) {
         if let Err(e) = self
             .transaction()
             .update_tx_status(tx_id.to_string(), TransactionStatus::Failed.into())
@@ -178,6 +149,21 @@ impl ZksyncDao {
             log::error!(
                 "Failed to update transaction failed in `transaction` {:?} : {:?}",
                 tx_id,
+                e
+            )
+            // TO CHECK: Should it continue or stop the process...
+        }
+    }
+
+    pub async fn payment_failed(&self, order_id: &str) {
+        if let Err(e) = self
+            .payment()
+            .update_status(order_id.to_string(), PAYMENT_STATUS_FAILED)
+            .await
+        {
+            log::error!(
+                "Failed to update transaction failed in `payment` {:?} : {:?}",
+                order_id,
                 e
             )
             // TO CHECK: Should it continue or stop the process...
