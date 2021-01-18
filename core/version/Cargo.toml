@@ -1,0 +1,12 @@
+[package]
+name = "ya-version"
+version = "0.0.1"
+description = "Version handling"
+authors = ["Golem Factory <contact@golem.network>"]
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+log = "0.4"
+tokio = { version = "0.2", features = ["time", "sync"] }
+self_update = { git = "https://github.com/jaemk/self_update", branch = "master", features = [], default-features = false }
