@@ -29,6 +29,7 @@ table! {
         encoded -> Text,
         signature -> Text,
         tx_hash -> Nullable<Text>,
+        network -> Integer,
     }
 }
 

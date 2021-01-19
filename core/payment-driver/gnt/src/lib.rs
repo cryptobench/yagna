@@ -11,6 +11,7 @@ mod error;
 mod eth_utils;
 mod gnt;
 mod models;
+mod networks;
 mod processor;
 mod schema;
 mod service;
@@ -23,6 +24,7 @@ use crate::gnt::ethereum::{Chain, EthereumClient, EthereumClientBuilder};
 use crate::gnt::sender::{AccountLocked, AccountUnlocked};
 use crate::gnt::{common, config, faucet, sender};
 use crate::models::{PaymentEntity, TxType};
+use crate::networks::Network;
 use crate::utils::PAYMENT_STATUS_NOT_YET;
 use actix::Addr;
 use bigdecimal::BigDecimal;
@@ -31,6 +33,8 @@ use chrono::{DateTime, Utc};
 use crate::processor::GNTDriverProcessor;
 use ethereum_types::{Address, H256, U256};
 use futures3::prelude::*;
+use lazy_static::lazy_static;
+use maplit::hashmap;
 use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;
@@ -43,6 +47,7 @@ use ya_client_model::payment::Allocation;
 use ya_client_model::NodeId;
 use ya_core_model::driver::{AccountMode, PaymentConfirmation, PaymentDetails};
 use ya_core_model::identity;
+use ya_core_model::payment::local::DriverDetails;
 use ya_persistence::executor::DbExecutor;
 use ya_service_api_interfaces::Provider;
 use ya_service_bus::typed as bus;
@@ -57,6 +62,17 @@ pub const DRIVER_NAME: &'static str = "erc20";
 pub const DEFAULT_NETWORK: &'static str = "rinkeby";
 pub const DEFAULT_TOKEN: &'static str = "tGLM";
 pub const DEFAULT_PLATFORM: &'static str = "erc20-rinkeby-tglm";
+
+lazy_static! {
+    pub static ref DRIVER_DETAILS: DriverDetails = DriverDetails {
+        default_network: Network::default().to_string(),
+        networks: hashmap! {
+            Network::Mainnet.to_string() => Network::Mainnet.into(),
+            Network::Rinkeby.to_string() => Network::Rinkeby.into(),
+        },
+        recv_init_required: false,
+    };
+}
 
 const ETH_FAUCET_MAX_WAIT: time::Duration = time::Duration::from_secs(180);
 

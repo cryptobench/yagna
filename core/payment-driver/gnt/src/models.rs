@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 
+use crate::networks::Network;
 use crate::schema::*;
 
 const TX_CREATED: i32 = 1;
@@ -68,6 +69,7 @@ pub struct TransactionEntity {
     pub encoded: String,
     pub signature: String,
     pub tx_hash: Option<String>,
+    pub network: Network,
 }
 
 #[derive(Queryable, Clone, Debug, Identifiable, Insertable, PartialEq)]

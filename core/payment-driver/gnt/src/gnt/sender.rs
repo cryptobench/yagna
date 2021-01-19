@@ -10,6 +10,7 @@ use crate::{utils, GNTDriverError, GNTDriverResult};
 use crate::dao::payment::PaymentDao;
 use crate::gnt::config::EnvConfiguration;
 use crate::gnt::{common, notify_payment, SignTx};
+use crate::networks::Network;
 use actix::prelude::*;
 use bigdecimal::{BigDecimal, Zero};
 use chrono::Utc;
@@ -64,6 +65,7 @@ impl Accounts {
 pub struct Reservation {
     pub reservation_id: u64,
     pub address: Address,
+    pub network: Network,
     pub nonces: Range<U256>,
     expire: Option<Instant>,
 }
@@ -90,6 +92,7 @@ impl Message for TxReq {
 pub struct TxSave {
     pub reservation_id: u64,
     pub address: Address,
+    pub network: Network,
     pub tx_type: TxType,
     pub transactions: Vec<(RawTransaction, Vec<u8>)>,
 }
@@ -98,11 +101,13 @@ impl TxSave {
     pub fn from_reservation(reservation: Reservation) -> Self {
         let reservation_id = reservation.reservation_id;
         let address = reservation.address;
+        let network = reservation.network;
         let transactions = Default::default();
         let tx_type = TxType::Transfer;
         TxSave {
             reservation_id,
             address,
+            network,
             transactions,
             tx_type,
         }
@@ -248,6 +253,7 @@ impl TransactionSender {
     fn new_reservation(
         &mut self,
         address: Address,
+        network: Network,
         count: usize,
         next_nonce: U256,
     ) -> &mut Reservation {
@@ -263,6 +269,7 @@ impl TransactionSender {
         self.reservation = Some(Reservation {
             reservation_id,
             address,
+            network,
             nonces,
             expire,
         });
@@ -372,7 +379,7 @@ impl Handler<TxSave> for TransactionSender {
                 crate::utils::raw_tx_to_entity(
                     raw_tx,
                     msg.address,
-                    chain_id,
+                    msg.network,
                     now,
                     signature,
                     tx_type,

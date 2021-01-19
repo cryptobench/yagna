@@ -24,8 +24,8 @@ pub mod migrations {
     struct _Dummy;
 }
 
-pub const DEFAULT_PAYMENT_PLATFORM: &str = "zksync-rinkeby-tglm";
-pub const DEFAULT_PAYMENT_DRIVER: &str = "zksync";
+pub const DEFAULT_PAYMENT_PLATFORM: &str = "erc20-rinkeby-tglm";
+pub const DEFAULT_PAYMENT_DRIVER: &str = "erc20";
 
 pub struct PaymentService;
 

@@ -2,6 +2,7 @@ use crate::error::GNTDriverError;
 use crate::GNTDriverResult;
 
 use crate::models::{TransactionEntity, TransactionStatus, TxType};
+use crate::networks::Network;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use ethereum_tx_sign::RawTransaction;
@@ -78,11 +79,12 @@ pub fn h256_from_hex(bytes: String) -> H256 {
 pub fn raw_tx_to_entity(
     raw_tx: &RawTransaction,
     sender: Address,
-    chain_id: u64,
+    network: Network,
     timestamp: DateTime<Utc>,
     signature: &Vec<u8>,
     tx_type: TxType,
 ) -> TransactionEntity {
+    let chain_id = network as u64;
     TransactionEntity {
         tx_id: prepare_tx_id(&raw_tx, chain_id, sender),
         sender: addr_to_str(sender),
@@ -93,6 +95,7 @@ pub fn raw_tx_to_entity(
         tx_type: tx_type.into(),
         signature: hex::encode(signature),
         tx_hash: None,
+        network,
     }
 }
 
