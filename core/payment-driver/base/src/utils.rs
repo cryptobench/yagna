@@ -34,7 +34,7 @@ pub fn db_to_payment_details(payment: &PaymentEntity) -> PaymentDetails {
         recipient: payment.recipient.clone(),
         sender: payment.sender.clone(),
         amount: db_amount_to_big_dec(payment.amount.clone()),
-        platform: "platform".to_string(), // TODO: Put in real platform
+        platform: payment.platform.clone(),
         date: Some(date),
     }
 }
